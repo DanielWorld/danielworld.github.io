@@ -40,6 +40,10 @@
     border-bottom-left-radius: 5px;
 }
 
+li {
+    margin:5px 0px;
+}
+
     </style>
 </head>
 
@@ -167,40 +171,160 @@
 
                     <h3>메모리 누수 확인방법?</h3>
 
-                    <p>Never in all their history have men been able truly to conceive of the world as one: a single sphere, a globe, having the qualities of a globe, a round earth in which all the directions eventually meet, in which there is no center because every point, or none, is center — an equal earth which all men occupy as equals. The airman's earth, if free men make it, will be truly round: a globe in practice, not in theory.</p>
+                    <p>메모리 누수를 찾기 위해 GC가 어떻게 작동하는지 잘 이해해야 합니다. 코드 작성과 리뷰를 부지런히 노력해야 합니다. 그러나 안드로이드에는 일부 코드가 의심스러울 때 누수를 예측할 수 있는 유용한 도구가 있습니다.</p>
 
-                    <p>Science cuts two ways, of course; its products can be used for both good and evil. But there's no turning back from science. The early warnings about technological dangers also come from science.</p>
+                    <p>1] Square에서 만든 <a target="_blank" href="https://github.com/square/leakcanary">Leak Canary</a>라는 메모리 누수를 감지하는데 유용한 도구가 있습니다. 앱의 액티비티들에 대해 약한 참조를 만듭니다. (다른 객체에 감시 기능을 추가하여 커스컴 할 수도 있습니다.) 그런 다음 GC후에 참조가 지워졌는지 확인합니다. 그렇지 않으면. hprof파일로 힙을 덤프 하고 분석하여 누수가 발생했는지 확인합니다. 있는 경우 알림이 표시되고 별도의 앱을 통해 누수가 발생된 위치를 트리 형태로 표시됩니다.</p>
 
-                    <p>What was most significant about the lunar voyage was not that man set foot on the Moon but that they set eye on the earth.</p>
-
-                    <p>A Chinese tale tells of some men sent to harm a young girl who, upon seeing her beauty, become her protectors rather than her violators. That's how I felt seeing the Earth for the first time. I could not help but love and cherish her.</p>
-
-                    <p>For those who have seen the Earth from space, and for the hundreds and perhaps thousands more who will, the experience most certainly changes your perspective. The things that we share in our world are far more valuable than those which divide us.</p>
-
-                    <h2 class="section-heading">The Final Frontier</h2>
-
-                    <p>There can be no thought of finishing for ‘aiming for the stars.’ Both figuratively and literally, it is a task to occupy the generations. And no matter how much progress one makes, there is always the thrill of just beginning.</p>
-
-                    <p>There can be no thought of finishing for ‘aiming for the stars.’ Both figuratively and literally, it is a task to occupy the generations. And no matter how much progress one makes, there is always the thrill of just beginning.</p>
-
-                    <blockquote>The dreams of yesterday are the hopes of today and the reality of tomorrow. Science has not yet mastered prophecy. We predict too much for the next year and yet far too little for the next ten.</blockquote>
-
-                    <p>Spaceflights cannot be stopped. This is not the work of any one man or even a group of men. It is a historical process which mankind is carrying out in accordance with the natural laws of human development.</p>
-
-                    <h2 class="section-heading">Reaching for the Stars</h2>
-
-                    <p>As we got further and further away, it [the Earth] diminished in size. Finally it shrank to the size of a marble, the most beautiful you can imagine. That beautiful, warm, living object looked so fragile, so delicate, that if you touched it with a finger it would crumble and fall apart. Seeing this has to change a man.</p>
+                    <p>개발자/테스트 빌드에만 Leak Canary를 설치하는 것이 좋습니다. 사용자 빌드를 만들기 전에 개발자와 QA가 미리 메모리 누수를 찾기 위해서입니다.</p>
 
                     <a href="#">
-                        <img class="img-responsive" src="img/post-sample-image.jpg" alt="">
+                        <img class="img-responsive" src="https://i0.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.23.32.png?resize=660%2C583" alt="">
                     </a>
-                    <span class="caption text-muted">To go places and do things that have never been done before – that’s what living is all about.</span>
+                    <span class="caption text-muted">Leak Canary</span>
 
-                    <p>Space, the final frontier. These are the voyages of the Starship Enterprise. Its five-year mission: to explore strange new worlds, to seek out new life and new civilizations, to boldly go where no man has gone before.</p>
+                    <p>2] 안드로이드 스튜디오에는 메모리 누수를 감지하기 위한 좋은 툴이 있습니다. 앱의 일부 Activity가 누수되는 것이 의심된다면 이를 수행하면 됩니다.</p>
 
-                    <p>As I stand out here in the wonders of the unknown at Hadley, I sort of realize there’s a fundamental truth to our nature, Man must explore, and this is exploration at its greatest.</p>
+                    <ul>
+                        <li>1단계: 컴퓨터에 기기 또는 에뮬레이터에서 디버그 모드로 실행합니다.</li>
+                        <li>2단계: 의심스러운 Activity로 이동하고 이전으로 돌아간 뒤 다시 실행합니다.</li>
+                        <li>
+                            3단계: 안드로이드 모니터 창의 메모리 섹션에서 GC 시작(Initiate GC) 버튼을 누릅니다. 그 후 Java 힙 덤프(Dump Java Heap) 버튼을 누릅니다.
+                            <a href="#">
+                                <img class="img-responsive" src="https://i1.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.24.31.png?resize=660%2C197" alt="">
+                            </a>
+                        </li>
+                        <li>
+                            4단계: Java 덤프 버튼을 누르면 안드로이드 스튜디오에서 덤프 된. hprof 파일을 엽니다. hprof파일 뷰어에는 메모리 누수를 확인할 수 있는 몇 가지 방법이 있습니다. 오른쪽 상단에 있는 Analyzer Tasks 도구를 사용하여 누수되는 Activity를 자동으로 탐지할 수 있습니다. 또는 왼쪽 상단 Class List View를 Package Tree View로 변경하여 Destory 해야 하는 Activity를 찾을 수 있습니다. Activity 객체의 총개수를 확인하세요. 인스턴스가 하나 이상 있으면 누수가 있음을 의미합니다.
+                            <a href="#">
+                                <img class="img-responsive" src="https://i0.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.24.36.png?resize=660%2C353" alt="">
+                            </a>                            
+                        </li>
+                        <li>
+                            5단계: 누수되는 Activity를 찾았다면 하단의 참조 트리(reference tree) 창에서 Activity를 참조하고 있는 객체를 찾으세요.
+                        </li>
+                    </ul>
 
-                    <p>Placeholder text by <a href="http://spaceipsum.com/">Space Ipsum</a>. Photographs by <a href="https://www.flickr.com/photos/nasacommons/">NASA on The Commons</a>.</p>
+                    <p>더 많은 정보는 ‘<a target="_blank" href="https://developer.android.com/studio/profile/am-hprof.html">HPROF Viewer and Analyzer</a>‘에서 확인하실 수 있습니다.</p>
+
+                    <h3>일반적인 누수의 패턴은?</h3>
+                    
+                    <p>안드로이드에서 메모리 누수가 발생하는 이유는 여러 가지가 있습니다. 요약하면 3가지 카테고리로 나눌 수 있습니다.</p>
+
+                    <ol>
+                        <li>정적 참조에 대한 Activity 누수</li>
+                        <li>작업 스레드에 대한 Activity 누수</li>
+                        <li>스레드 자체 누수</li>
+                    </ol>
+
+                    <p>Github의 <a target="_blank" href="https://github.com/frank-tan/SinsOfMemoryLeaks">SinsOfMemoryLeaks</a>에서 다양한 방식으로 메모리 누수를 시키는 간단한 앱을 만들었습니다.</p>
+
+                    <p>LEAK 브랜치에서는 메모리 누수가 되는 코드를 볼 수 있습니다. 앞에서 언급한 안드로이드 스튜디오에서 모니터링 툴을 통해 누수를 추적할 수도 있습니다. FIXED 브랜치에서는 누수가 어떻게 수정되었는지 확인할 수 있습니다. 확신이 들지 않는다면 앞서 언급한 도구를 사용하여 실제로 수정되었는지 확인할 수 있습니다. 두 가지 브랜치는 서로 다른 앱 ID이기 때문에 동일한 기기에 설치하여 나란히 사용할 수 있습니다.</p>
+
+                    <a href="#">
+                        <img class="img-responsive" src="https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?resize=660%2C383" alt="" srcset="https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?resize=1024%2C595 1024w, https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?resize=720%2C419 720w, https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?resize=825%2C480 825w, https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?w=1320 1320w, https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?w=1980 1980w" sizes="(max-width: 660px) 100vw, 660px" width="598" height="347">
+                    </a>
+
+                    <p>다양한 원인을 3가지 카테고리로 나누었는데 하나씩 알아보겠습니다.</p>
+
+                    <h4>정적 참조에 대한 Activity 누수</h4>
+
+                    <p>정적 참조는 앱이 메모리에 있는 한 계속 유지됩니다. Activity는 일반적으로 여러 번 파괴되고 다시 생성되는 생명주기를 가지고 있습니다. 정적 참조에서 Activity를 참조하는 경우 Activity는 생명주기에 의해 Destory 된 후에 GC 되지 않습니다. Activity는 콘텐츠에 따라 수 킬로 바이트에서 많은 경우 메가바이트까지 다양합니다. 복잡한 뷰 계층 구조나 고해상도의 이미지의 경우 많은 양의 메모리가 누수될 수 있습니다.</p>
+
+                    <p>이 카테고리에서는 다음과 같은 항목이 있습니다.</p>
+
+                    <p>
+                        <strong>정적 뷰에 Activity를 참조</strong><br>
+                        <script src="https://gist.github.com/kmshack/0c2d2fa430bc44bc5e54eec13766368b.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
+                    </p>
+
+                    <p>
+                        <strong>정적 변수에 Activity를 참조</strong><br>
+                        <script src="https://gist.github.com/kmshack/e60f814f6e50d46d8d11d5ce1e70b2b5.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
+                    </p>
+
+                    <p>
+                        <strong>싱글톤 객체에 Activity를 참조</strong><br>
+                        <script src="https://gist.github.com/kmshack/95f12f3fdfdd1332d4cb476f1a7a5048.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
+                    </p>
+
+                    <p>
+                        <strong>Activity의 내부 클래스를 정적으로 참조</strong><br>
+                        <script src="https://gist.github.com/kmshack/521b994dfc31c4130c78b06ea9ac80de.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
+                    </p>
+
+                    <h4>작업 스레드에 대한 Activity 누수</h4>
+
+                    <p>Activity는 작업 스레드보다 오래 지속될 수 있습니다. Activity보다 더 오래 작업하는 스레드에서 Activity를 참조하면 누수가 발생합니다. 이 카테고리에도 다음과 같은 몇 가지 항목이 있습니다.</p>
+
+                    <p>
+                        <strong>스레드에서 Activity 참조</strong><br>
+                        <script src="https://gist.github.com/kmshack/f0251a39b7899c281390075112dd666b.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
+                    </p>
+
+                    <p>
+                        <strong>Handler에서 Activity 참조</strong><br>
+                        <script src="https://gist.github.com/kmshack/50221d621ec39b5031893ed826acdb6f.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
+                    </p>
+
+                    <p>
+                        <strong>AsyncTask에서 Activity참조</strong><br>
+                        스레드에서 Activity 참조와 동일하게 AsyncTask의 기술인 스레드풀, ExecutorService에도 동일한 원칙이 적용됩니다.<br>
+                        <script src="https://gist.github.com/kmshack/d90cd8cee732077b8671a68e257bb867.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
+                    </p>
+
+                    <h4>스레드 자체 누수</h4>
+
+                    <p>Activity에서 스레드를 시작할 때마다 스레드를 직접 관리해야 합니다. 스레드는 Activity보다 오래 작업할 수 있기 때문에 Activity가 소멸되면 스레드를 중지시켜야 합니다. 이렇게 하지 않으면 스레드가 누수될 위험이 있습니다.</p>
+
+                    <p>
+                    <script src="https://gist.github.com/kmshack/574a310a0d0539ea7e90993bbb29add3.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css"></p>
+
+                    <h3>까다로운 메모리 누수?</h3>
+
+                    <p>이상적으로 메모리 누수를 일으키는 코드를 작성하지 말아야 하며 존재하는 메모리 누수 문제를 수정해야 합니다. 그러나 실제로 다른 작업으로 인해 메모리 누수 수정의 우선순위를 판단하기 힘든데, 다음 3가지 목록을 통해 심각도를 평가할 수 있습니다.</p>
+
+                    <p>
+                        <strong>1. 누수된 메모리는 얼마나 큰가?</strong><br>
+                        모든 메모리 누수는 동일하지 않습니다. 일부는 몇 킬로바이트만 누설합니다. 일부는 많은 양의 메가바이트까지 유출할 수 있습니다. 앞서 언급한 도구를 사용하여 누설되는 메모리 크기를 측정하여 사용자의 기기에서 얼마나 중요한 용량인지 여부를 통해 결정할 수 있습니다.
+                    </p>
+
+                    <p>
+                        <strong>2. 누수된 객체는 얼마나 오랫동안 메모리에 상주하는가?</strong><br>
+                        스레드를 통한 누수는 스레드의 작업이 완료될 때까지 지속됩니다. 스레드가 최악의 시나리오에서 얼마나 오랫동안 지속되는지 검사를 해야 합니다. 예제에서 스레드는 무한루프이기 때문에 누수되는 객체는 영원히 메모리에 상주합니다. 실제로 대부분의 스레드가 파일 시스템에 액세스 하거나 네트워크 호출을 하는 등의 작업을 수행하기 때문에 일반적으로 시간이 제한되어 있는 짧은 시간일 것입니다. 발생할 수 있는 최대 시간은 메모리 누수를 수정의 우선순위를 결정할 때 고려해야 할 사항입니다.
+                    </p>
+
+                    <p>
+                        <strong>3. 얼마나 많은 객체가 누수되는가?</strong><br>
+                        예제의 정적 참조와 같이 메모리 누수는 하나의 객체에서만 나타납니다. 새로운 Activity가 생성되자 말자, 레퍼런스는 새로운 Activity를 참조되기 시작됩니다. 이전 Activity는 GC수집 대상이 됩니다. 따라서 최대 누출은 개수는 Activity 인스턴스 한 개입니다. 그러나 누수가 있는 경우 새 객체가 생성될 때마다 Activity 인스턴스 개수가 늘어납니다. 예제에서도 Activity가 생성될 때마다 스레드에 Activity에 참조가 걸려 누수가 발생됩니다. 따라서 기기를 20번 회전시키는 동안 20개의 스레드가 누수됩니다. 새로운 인스턴스가 GC에 의해 정리되지 않는 다면 사용 가능한 모든 메모리가 점점 줄어들기 때문에 정말로 나쁜 상황이 생길 수 있습니다.
+                    </p>
+
+                    <h3>고치거나 피하는 방법은?</h3>
+
+                    <p>
+                        Activity 클래스에서 정적 변수를 사용할 때 매우 주의해야 합니다. 정적 변수가 Activity를 직접 또는 간접적으로 참조할 가능성이 있는 경우 onDestory에서 참조를 끊어야 합니다. Manager 인스턴스 또는 싱글톤 객체에 리스너로 Activity를 전달할 때, 전달한 Activity 인스턴스로 다른 객체가 무엇을 하는지 알고 있어야 합니다. 필요한 경우 onDestory에서 리스너를 null로 설정하세요.<br>
+                        <script src="https://gist.github.com/kmshack/f87b948828c39080499c7c30ff54148b.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
+                    </p>
+
+                    <p>Activity 클래스에 내부 클래스를 만들 때 가능한 정적으로 만듭니다. 내부 클래스와 익명 클래스에는 암시적 참조가 있습니다. 따라서 내부/익명 클래스의 인스턴스가 포함된 클래스보다 오랫동안 유지되면 문제가 발생합니다. 누수의 위험을 피하기 위해 내부/익명 클래스가 아닌 정적 클래스를 사용하면 됩니다.</p>
+
+                    <p>
+                    <script src="https://gist.github.com/kmshack/eed3fc137fbc7d01566cd6e835043381.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css"></p>
+
+                    <p>싱글톤 또는 Manager클래스를 만들 경우 Listener 인스턴스의 참조를 저장하여 관리할 수 있게 해야 하며, 사용자에 의해 참조를 관리할 수 없는 경우 Listener를 WeakReference로 관리하게 합니다. WeakReference는 GC에서 해당 대상을 지우지 않고 다시 회수하지 못하게 합니다. 이 기능은 메모리 누수를 막는데 큰 도움이 되지만 참조된 객체가 필요할 때 사용하지 못하는 부작용도 있을 수 있습니다. 따라서 메모리 누수를 수정하기 위해 가장 마지막 수단으로 사용해야 합니다. Activity에서 시작한 스레드 작업은 onDestory에서 항상 종료하세요.</p>
+
+                    <h3>마치며</h3>
+
+                    <p>우리는 메모리 누수가 무엇인지, 어떻게 발생하는지, 안드로이드 시스템에서 어떤 결과가 발생하는지에 대해 알아보았습니다. 메모리 누수를 탐지하고 식별하는 도구와 안드로이드의 일반적인 메모리 누수 패턴을 검사하는 방법, 심각도를 평가하는 방법과 피하거나 수정하는 방법을 소개하였습니다. Github저장소에서 일반적인 메모리 누수 패턴 및 수정에 대한 코드 예제를 한 번씩 확인해보세요. 모두 행복한 안드로이드 앱을 만드세요:)</p>
+
+                    <p>
+                        참고:<br>
+                        <a target="_blank" href="https://developer.android.com/training/articles/perf-anr.html">https://developer.android.com/training/articles/perf-anr.html</a><br>
+                        <a target="_blank" href="https://www.dynatrace.com/resources/ebooks/javabook/how-garbage-collection-works/">https://www.dynatrace.com/resources/ebooks/javabook/how-garbage-collection-works/</a><br>
+                        <a target="_blank" href="https://developer.android.com/studio/profile/am-hprof.html">https://developer.android.com/studio/profile/am-hprof.html</a><br>
+                        <a target="_blank" href="https://developer.android.com/reference/java/lang/ref/WeakReference.html">https://developer.android.com/reference/java/lang/ref/WeakReference.html</a><br>
+                        <a target="_blank" href="https://medium.com/google-developer-experts/finally-understanding-how-references-work-in-android-and-java-26a0d9c92f83#.h9w7hp13h">https://medium.com/google-developer-experts/finally-understanding-how-references-work-in-android-and-java-26a0d9c92f83#.h9w7hp13h</a>
+                    </p>
+
                 </div>
             </div>
         </div>
