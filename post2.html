@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>안드로이드의 메모리 누수 패턴</title>
+    <title>RecyclerView Prefetch</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -90,9 +90,9 @@ li {
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <div class="post-heading">
-                        <h1>안드로이드의 메모리 누수 패턴</h1>
-                        <!--<h2 class="subheading">Problems look mighty small from 150 miles up</h2>-->
-                        <span class="meta">Posted by <a href="#">Daniel Park</a> on March 30, 2017</span>
+                        <h1>RecyclerView Prefetch</h1>
+                        <h2 class="subheading">Smoother Flings and Scrolls by Doing Stuff Sooner</h2>
+                        <span class="meta">Posted by <a href="#">Daniel Park</a> on April 1, 2017</span>
                     </div>
                 </div>
             </div>
@@ -105,14 +105,33 @@ li {
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
 
-                    <blockquote><p><a target="_blank" href="http://www.kmshack.kr/2017/03/%EC%95%88%EB%93%9C%EB%A1%9C%EC%9D%B4%EB%93%9C%EC%9D%98-%EB%A9%94%EB%AA%A8%EB%A6%AC-%EB%88%84%EC%88%98-%ED%8C%A8%ED%84%B4/">
-                        <b>번역글 출처 바로가기</b></a>&nbsp;&nbsp;(꿈꾸는 개발자의 로그)</p></blockquote>
+                    <blockquote>
+                        <p>
+                            <a target="_blank" href="https://medium.com/google-developers/recyclerview-prefetch-c2f269075710">RecyclerView Prefetch</a>를 번역한 글입니다.
+                        </p>
+                    </blockquote>
 
-                    <blockquote><p><a target="_blank" href="https://android.jlelse.eu/memory-leak-patterns-in-android-4741a7fcb570">Memory Leak Patterns in Android</a>를 번역한 글입니다.</p></blockquote>
+                    <p>내가 어렸을 때, 엄마는 내가 지금 방을 청소한다면, 나중에 할 필요가 없다는 잔소리로 나의 미루는 버릇을 없애려고 해왔습니다. 그러나 나는 그 말을 절대 속으로 받아드리지 않았죠. 나는 가능한 그것들을 그대로 흘러가게 놔두는 것이 항상 최고라고 알았죠.
+                    한가지 분명한 건, 내가 만약 지금 청소를 했다고 해도, 곧 다시 더러워졌을 거에요. 그리고 결국 그 끔찍한 집안일을 또 해야만 했다는 거죠. 그리고 내가 오랬동안 그렇게 냅두면, 엄마도 결국 그 일을 까먹었을 거에요.</p>
 
-                    <h3>메모리 누수란?</h3>
+                    <p>미루는 버릇 항상 나와 함께 해왔죠. 그러나 나는 내 친구 RecyclerView 와는 다르게 일관된 프레임 비율의 이슈를 다룰 필요가 없었습니다.</p>
+                    
+                    <h3>문제점</h3>
 
-                    <p>모든 앱은 작업을 수행하는데 필요한 리소스로 메모리가 필요합니다. Android의 각 앱에 충분한 메모리가 있는지 확인하려면 Android 시스템에서 메모리 할당을 효율적으로 관리해야 합니다. Android 런타임은 메모리가 부족한 경우 가비지 수집(GC)을 트리거합니다. GC의 목적은 더 이상 유용하지 않은 객체를 정리하여 메모리를 회수하는 것입니다. 다음 3단계로 진행됩니다.</p>
+                    <p>
+                        스크롤이나 fling 을 동작하는 동안에 RecyclerView 는 화면에 보여지는 새 item 들을 표시해야 합니다. 이 새 item 들은 데이터와 bound 되어야만 하죠.
+                        (물론 캐시에 해당 항목들이 없을 경우, 생성될 수 있습니다.) 그리고 나서, 배치가 되고 그려집니다. 이 모든 작업들이 지루하게 이루어지기까지 
+                        UI 스레드는 점점 느려지다가 멈추게 되죠. 그러고 나면 렌더링이 진행되고 스크롤은 그 다음 새 item 이 view 에 도달하기 전까지 
+                        smoothly 하게 움직일 수 있습니다.
+                    </p>
+
+                    <a href="#">
+                        <img class="img-responsive" src="https://cdn-images-1.medium.com/max/750/1*X9E34oKRhAJbG-uSrhv-TA.png" alt="">
+                    </a>
+                    <span class="caption text-muted">
+                        Typical rendering phases of RecyclerView content during a scroll (as of the Lollipop release). On the UI thread, we process input events, handle animations, perform layout, and record the drawing operations. Then the RenderThread (RT) sends the commands to the&nbsp;GPU.
+                    </span>
+
 
                     <ol>
                         <li>GC 루트에서 메모리에 있는 모든 객체 참조를 나열하여 GC 루트의 참조가 있는 활성 객체를 표시합니다.</li>
@@ -120,10 +139,7 @@ li {
                         <li>살아있는 객체를 다시정렬합니다.</li>
                     </ol>
 
-                    <a href="#">
-                        <img class="img-responsive" src="img/post1/active_objects_in_gc_root.png" alt="">
-                    </a>
-                    <span class="caption text-muted">GC 루트에서 나열되는 활성화된 객체 표시</span>
+                   
 
                     <p>
                         간단히 말해서, 사용자에게 서비스를 제공하는 모든 것을 메모리에 기록해야 하며, 리소스를 확보하기 위해 메모리에서 모든 것을 지워야 합니다.<br>
