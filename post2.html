@@ -107,22 +107,14 @@ li {
 
                     <blockquote>
                         <p>
-                            <a target="_blank" href="https://medium.com/google-developers/recyclerview-prefetch-c2f269075710">RecyclerView Prefetch</a>를 번역한 글입니다.
+                            <a target="_blank" href="https://medium.com/google-developers/recyclerview-prefetch-c2f269075710">RecyclerView Prefetch</a> 는 원본글 입니다.
                         </p>
                     </blockquote>
 
-                    <p>내가 어렸을 때, 엄마는 내가 지금 방을 청소한다면, 나중에 할 필요가 없다는 잔소리로 나의 미루는 버릇을 없애려고 해왔습니다. 그러나 나는 그 말을 절대 속으로 받아드리지 않았죠. 나는 가능한 그것들을 그대로 흘러가게 놔두는 것이 항상 최고라고 알았죠.
-                    한가지 분명한 건, 내가 만약 지금 청소를 했다고 해도, 곧 다시 더러워졌을 거에요. 그리고 결국 그 끔찍한 집안일을 또 해야만 했다는 거죠. 그리고 내가 오랬동안 그렇게 냅두면, 엄마도 결국 그 일을 까먹었을 거에요.</p>
-
-                    <p>미루는 버릇 항상 나와 함께 해왔죠. 그러나 나는 내 친구 RecyclerView 와는 다르게 일관된 프레임 비율의 이슈를 다룰 필요가 없었습니다.</p>
-                    
-                    <h3>문제점</h3>
+                    <h3>The Problem</h3>
 
                     <p>
-                        스크롤이나 fling 을 동작하는 동안에 RecyclerView 는 화면에 보여지는 새 item 들을 표시해야 합니다. 이 새 item 들은 데이터와 bound 되어야만 하죠.
-                        (물론 캐시에 해당 항목들이 없을 경우, 생성될 수 있습니다.) 그리고 나서, 배치가 되고 그려집니다. 이 모든 작업들이 지루하게 이루어지기까지 
-                        UI 스레드는 점점 느려지다가 멈추게 되죠. 그러고 나면 렌더링이 진행되고 스크롤은 그 다음 새 item 이 view 에 도달하기 전까지 
-                        smoothly 하게 움직일 수 있습니다.
+                        During a scroll or fling operation, RecyclerView will need to display new items as they arrive on screen. These new items need to be bound to the data (and possibly created, if there are no items like it in the cache). Then they need to be laid out and drawn. When all of this is done lazily, just before it is needed, the UI thread can grind to a halt while the work completes. Then rendering can proceed and the scroll (or fling, but I’ll just refer to either as “scroll” from here on to simplify things) can get back to moving along smoothly… until the next new item comes into view.
                     </p>
 
                     <a href="#">
@@ -132,207 +124,95 @@ li {
                         Typical rendering phases of RecyclerView content during a scroll (as of the Lollipop release). On the UI thread, we process input events, handle animations, perform layout, and record the drawing operations. Then the RenderThread (RT) sends the commands to the&nbsp;GPU.
                     </span>
 
+                    <p>During most frames of a scroll, the RecyclerView has no problem doing what it needs to do, because there is no new content to deal with. During these frames, the UI thread processes input, handles animations, performs layout, and records drawing commands. It then syncs the drawing information over to the RenderThread (as of the <a href="https://developer.android.com/about/versions/lollipop.html" data-href="https://developer.android.com/about/versions/lollipop.html" target="_blank">Lollipop</a> release; prior releases do all of this work on the UI thread), which sends those commands over to the GPU.</p>
 
-                    <ol>
-                        <li>GC 루트에서 메모리에 있는 모든 객체 참조를 나열하여 GC 루트의 참조가 있는 활성 객체를 표시합니다.</li>
-                        <li>나열되지 않아 표시된 모든 객체는 메모리에서 지워집니다.</li>
-                        <li>살아있는 객체를 다시정렬합니다.</li>
-                    </ol>
+                    <a href="#">
+                        <img class="img-responsive" src="https://cdn-images-1.medium.com/max/1200/1*DIr64fruHL5lp72Ji-b7rw.png" alt="">
+                    </a>
+                    <span class="caption text-muted">
+                        New items cause the Input stage to take longer as new views are created, bound, and laid out. This results in a later start for the Render stage, which might cause it to finish after the frame boundary, resulting in a missed frame.                    
+                    </span>
+          
+                    <p>When a new item comes on screen, more work is required in the input stage to bind, and possibly create, the appropriate views. This pushes the rest of the UI thread work later, as well as the ensuing work of the RenderThread, and can cause jank if it cannot all happen within the frame boundary.</p>
 
-                   
+                    <a href="#">
+                        <img class="img-responsive" src="https://cdn-images-1.medium.com/max/1200/1*R0vg4lvbNilR1xB5Qrawmw.png" alt="">
+                    </a>
+                    <span class="caption text-muted">
+                        The call stack during input shows that new items coming into view cause a large chunk of time to be spent creating and binding the new views                    
+                    </span>
 
-                    <p>
-                        간단히 말해서, 사용자에게 서비스를 제공하는 모든 것을 메모리에 기록해야 하며, 리소스를 확보하기 위해 메모리에서 모든 것을 지워야 합니다.<br>
-                        그러나 사용되지 않는 객체가 사용되는 객체에서 어떻게든 참조되는 좋지 않은 코드로 인해 GC는 사용되지 않은 객체를 유용한 객체로 표시하고 객체를 제거할 수 없게 됩니다. 이를 메모리 누수라고합니다.
+                    <p>Examining the call stack during the input phase when these new items come in shows us that a large portion of the time is spent creating and binding the views.</p>
+
+                    <p>Wouldn’t it be nice if we could do that work elsewhere instead of delaying everything while we get those new items ready?</p>
+
+                    <a href="#">
+                        <img class="img-responsive" src="https://cdn-images-1.medium.com/max/1200/1*2XWNdvsSwW8-L_DQwYxLxw.png" alt="">
+                    </a>
+                    <span class="caption text-muted">
+                        Creating and binding views has to be done before they can be rendered, which takes up valuable time on the UI thread during the frame in which they’re needed. But meanwhile, that thread spends a lot of time idling in the previous frame…                    
+                    </span>
+
+                    <p>This is the observation that <a href="http://androidbackstage.blogspot.com/2015/07/this-time-tor-and-chet-are-joined-by.html" target="_blank">Chris Craik</a> (a graphics engineer on the Android UI Toolkit team) made when he was looking at <a href="https://developer.android.com/studio/profile/systrace.html" target="_blank">Systraces</a> of RecyclerView scrolls. Specifically, he saw that we’re spending a lot of time getting the items ready right when they’re needed. But meanwhile, just a frame before that, the UI thread was spending a lot of the time in that frame sleeping, because it finished its tasks early.</p>
+
+                    <h3>The Solution</h3>
+
+                    <a href="#">
+                        <img class="img-responsive" src="https://cdn-images-1.medium.com/max/1200/1*_qCP_uaM8nMSlgqU6L1CxA.png" alt="">
+                    </a>
+                    <span class="caption text-muted">
+                        Moving the creation and bind operations to the previous frame allows the UI Thread to do that work in parallel with the RenderThread, and avoids doing it later when it has to be done synchronously before the RenderThread can draw the results.                    
+                    </span>
+
+                    <p>Obviously, it was time to play around with time. Specifically, Chris rearranged the way things happen in the default RecyclerView layouts such that it now pre-fetches items that are about to come into view, so that we do this work during an idle phase, and avoid doing it later when everyone’s waiting for those results.</p>
+
+                    <p>Now the work can happen essentially for free. Because the UI Thread was not doing any work in that gap between frames, we’re able to use that idle time to get work done that we will need later, and make that future frame that much faster because the hard part is already done.</p>
+
+                    <h3>Details, Details</h3>
+
+                    <p>The system works by scheduling a Runnable whenever RecyclerView starts a scrolling operation. This Runnable performs the prefetch of items that should come into view soon, depending on the layout manager and the direction that the views are being scrolled. Prefetching is not limited to a single item, either; it can fetch multiple items at once, such as when a row of GridLayoutManager items is coming on screen. In v25.1, prefetch operations are broken up into individual create/bind operations, which fit more easily into the UI thread gaps than operations on whole groups of items.</p>
+
+                    <p>One of the interesting things about the prefetch approach is that the system has to predict how much time operations will take, and whether they can fit within the available gap. After all, if prefetch work delayed that frame past its deadline, we may still have jank from a skipped frame, just in a different place than we would without the prefetch. The way that the system handles this detail is by tracking the average create/bind durations per view type, enabling reasonable prediction of future create/bind operations.</p>
+
+                    <p>Performing this work for nested RecyclerViews (containers whose items are, themselves, RecyclerViews) is trickier, since binding the inner RecyclerView doesn’t allocate any children — RecyclerView fetches children on demand when it’s attached and laid out. The prefetching system can still prepare children within that inner RecyclerView, but it has to know how many. This is the reason for the new API in v25.1 of LinearLayoutManager, 
+                        <a href="https://developer.android.com/reference/android/support/v7/widget/LinearLayoutManager.html#setInitialPrefetchItemCount%28int%29" data-href="https://developer.android.com/reference/android/support/v7/widget/LinearLayoutManager.html#setInitialPrefetchItemCount(int)" target="_blank">setInitialItemPrefetchCount()</a>, which tells the system how many items to prefetch to fill the RecyclerView when it’s about to scroll on screen.
                     </p>
 
-                    <a href="#">
-                        <img class="img-responsive" src="img/post1/active_objects_in_gc_root2.png" alt="">
-                    </a>
-                    <span class="caption text-muted">메모리 누수</span>
+                    <h3>Caveats</h3>
 
-                    <h3>왜 메모리 누수는 좋지 않은가?</h3>
-
-                    <p>어떤 객체도 오랫동안 메모리에 기록되어야 합니다. 사용자들에게 실질적인 가치를 제공하기 위해 사용될 수 있는 소중한 자원을 차지합니다. 안드로이드의 경우 다음과 같은 문제가 발생합니다.</p>
-
-                    <p>1] 메모리 누수가 발생하면 사용 가능한 메모리가 부족하게 됩니다. 결과적으로 안드로이드 시스템은 빈번하게 GC이벤트를 호출합니다. GC이벤트는 모든 이벤트를 멈추게 합니다. GC가 발생하면 UI렌더링과 이벤트 처리가 중단됩니다. 안드로이드는 화면을 16ms로 그립니다. GC가 오래 걸리면 안드로이드는 프레임을 잃어버리기 시작합니다. 일반적으로, 100~200ms이상일 때 사용자가 앱이 느리다는 것을 인지하게됩니다.</p>
-
-                    <a href="#">
-                        <img class="img-responsive" src="img/post1/android_drawing_window.png" alt="">
-                    </a>
-                    <span class="caption text-muted">안드로이드 화면 그리기</span>
-                    
-                    <a href="#">
-                        <img class="img-responsive" src="img/post1/losing_frame_due_to_frequent.png" alt="">
-                    </a>
-                    <span class="caption text-muted">빈번한 GC로 인한 프레임 손실</span>
-                    
-                    <p>안드로이드에서 애플리케이션 응답은 Activity 매니저와 Window 매니저 시스템 서비스로 모니터링됩니다. 안드로이드는 다음 조건중 하나를 감시하면 특정 응용 프래그램에 대한 ANR 다이얼로그를 표시합니다.</p>
+                    <p>
+                        There are a some important caveats here to be aware of:
+                    </p>
 
                     <ul>
-                        <li>5초 내에 입력 이벤트(키 누름 또는 화면 터치 이벤트)에 대한 응답이 없음 경우.</li>
-                        <li>BroadcastReceiver가 10초 내에 실행을 완료하지 않을 경우.</li>
+                        <li>Pre-fetching may do work that ends up not being needed. Because we are pre-fetching a view, it is possible that we are doing this too aggressively, and that the RecyclerView will not get to the item in question. This means that our pre-fetching work may be wasted (although since it happened in parallel, this should not be a big deal. Besides, this should be pretty uncommon because we are fetching very soon before it is needed, and it’s unlikely that the scroll will stop or reverse between those two frames).</li>
+                        <li>RenderThread: The RenderThread was a performance feature introduced in Lollipop, to offload rendering onto a different thread and allow for some improvements such as running some immutable animations (for example, ripples and circular reveals) completely on the RenderThread, without being affected by UI Thread stalls. This means that devices running on releases earlier than Lollipop will not benefit from this optimization, because we cannot parallelize this work.</li>
                     </ul>
 
-                    <a href="#">
-                        <img class="img-responsive" src="img/post1/android_not_responding.png" alt="">
-                    </a>
-                    <span class="caption text-muted">ANR (Android Not Responding)</span>
+                    <h3>I Want Some - Where Can I Get It?</h3>
 
-                    <p>어떤 사용자도 앱이 응답지연 다이얼로그를 보고 싶어 하지 않는 것을 확신합니다.</p>
+                    <p>The pre-fetch optimizations were introduced in 
+                        <a href="https://developer.android.com/topic/libraries/support-library/revisions.html#rev25-0-0" data-href="https://developer.android.com/topic/libraries/support-library/revisions.html#rev25-0-0" target="_blank">Support Library v25</a>, with further enhancements in <a href="https://developer.android.com/topic/libraries/support-library/revisions.html#25-1-0" data-href="https://developer.android.com/topic/libraries/support-library/revisions.html#25-1-0" target="_blank">v25.1.0</a>. So the first step is to get the <a href="https://developer.android.com/topic/libraries/support-library/revisions.html" data-href="https://developer.android.com/topic/libraries/support-library/revisions.html" target="_blank">latest version</a> of the Support Library.</p>
 
-                    <p>2] 앱에 메모리 누수 있는 경우, 객체는 메모리에서 반환될 수 없습니다. 결과적으로 안드로이드 시스템은 더 많은 메모리를 요청합니다. 그러나 한계가 있습니다. 결국 시스템은 앱에 더 많은 메모리를 할당하는 것을 거부합니다. 이렇게 되면 앱은 메모리 부족으로 인해 강제 종료됩니다. 물론 강제 종료를 아무도 좋아하지 않습니다. 사용자는 당장 앱을 제거하거나 앱 리뷰를 나쁘게 줄 것입니다.</p>
+                    <p>
+                        If you use the default layout managers provided with RecyclerView, you will automatically get this optimization. However, if you are using nested RecyclerViews, or you wrote your own layout manager, you will need to change your code in order to take advantage of this feature.
+                    </p>
 
-                    <p>3] 메모리 누수 문제는 QA 테스트로 찾기 어렵습니다. 재현하기도 어렵습니다. 그리고 안드로이드 시스템이 메모리 할당을 거부할 때 언제 어디서나 발생할 수 있기 때문에 크래쉬 리포트로 추론하기가 어렵습니다.</p>
+                    <p>For nested RecyclerViews, call LinearLayoutManager’s new <a href="https://developer.android.com/reference/android/support/v7/widget/LinearLayoutManager.html#setInitialPrefetchItemCount%28int%29" data-href="https://developer.android.com/reference/android/support/v7/widget/LinearLayoutManager.html#setInitialPrefetchItemCount%28int%29" class="markup--anchor markup--p-anchor" rel="nofollow noopener" target="_blank">setInitialItemPrefetchCount()</a> method (available in v25.1) on the inner LayoutManagers to get the best performance. For example, if rows in your vertical list show over three items at a minimum, call setInitialItemPrefetchCount(4).</p>
 
-                    <h3>메모리 누수 확인방법?</h3>
+                    <p>If you’ve implemented your own LayoutManager, you will need to override <a href="https://developer.android.com/reference/android/support/v7/widget/RecyclerView.LayoutManager.html#collectAdjacentPrefetchPositions%28int,%20int,%20android.support.v7.widget.RecyclerView.State,%20android.support.v7.widget.RecyclerView.LayoutManager.LayoutPrefetchRegistry%29" data-href="https://developer.android.com/reference/android/support/v7/widget/RecyclerView.LayoutManager.html#collectAdjacentPrefetchPositions(int, int, android.support.v7.widget.RecyclerView.State, android.support.v7.widget.RecyclerView.LayoutManager.LayoutPrefetchRegistry)" class="markup--anchor markup--p-anchor" rel="nofollow noopener" target="_blank">LayoutManager.collectAdjacentPrefetchPositions()</a>, which is called by RecyclerView when prefetch is enabled (the default implementation in LayoutManager does nothing). Secondly, if you want prefetching to occur from your LayoutManager when its RecyclerView is nested in another, you should also implement <a href="https://developer.android.com/reference/android/support/v7/widget/RecyclerView.LayoutManager.html#collectInitialPrefetchPositions%28int,%20android.support.v7.widget.RecyclerView.LayoutManager.LayoutPrefetchRegistry%29" data-href="https://developer.android.com/reference/android/support/v7/widget/RecyclerView.LayoutManager.html#collectInitialPrefetchPositions(int, android.support.v7.widget.RecyclerView.LayoutManager.LayoutPrefetchRegistry)" class="markup--anchor markup--p-anchor" rel="nofollow noopener" target="_blank">LayoutManager.collectInitialPrefetchPositions()</a>.</p>
 
-                    <p>메모리 누수를 찾기 위해 GC가 어떻게 작동하는지 잘 이해해야 합니다. 코드 작성과 리뷰를 부지런히 노력해야 합니다. 그러나 안드로이드에는 일부 코드가 의심스러울 때 누수를 예측할 수 있는 유용한 도구가 있습니다.</p>
-
-                    <p>1] Square에서 만든 <a target="_blank" href="https://github.com/square/leakcanary">Leak Canary</a>라는 메모리 누수를 감지하는데 유용한 도구가 있습니다. 앱의 액티비티들에 대해 약한 참조를 만듭니다. (다른 객체에 감시 기능을 추가하여 커스컴 할 수도 있습니다.) 그런 다음 GC후에 참조가 지워졌는지 확인합니다. 그렇지 않으면. hprof파일로 힙을 덤프 하고 분석하여 누수가 발생했는지 확인합니다. 있는 경우 알림이 표시되고 별도의 앱을 통해 누수가 발생된 위치를 트리 형태로 표시됩니다.</p>
-
-                    <p>개발자/테스트 빌드에만 Leak Canary를 설치하는 것이 좋습니다. 사용자 빌드를 만들기 전에 개발자와 QA가 미리 메모리 누수를 찾기 위해서입니다.</p>
-
-                    <a href="#">
-                        <img class="img-responsive" src="https://i0.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.23.32.png?resize=660%2C583" alt="">
-                    </a>
-                    <span class="caption text-muted">Leak Canary</span>
-
-                    <p>2] 안드로이드 스튜디오에는 메모리 누수를 감지하기 위한 좋은 툴이 있습니다. 앱의 일부 Activity가 누수되는 것이 의심된다면 이를 수행하면 됩니다.</p>
-
-                    <ul>
-                        <li>1단계: 컴퓨터에 기기 또는 에뮬레이터에서 디버그 모드로 실행합니다.</li>
-                        <li>2단계: 의심스러운 Activity로 이동하고 이전으로 돌아간 뒤 다시 실행합니다.</li>
-                        <li>
-                            3단계: 안드로이드 모니터 창의 메모리 섹션에서 GC 시작(Initiate GC) 버튼을 누릅니다. 그 후 Java 힙 덤프(Dump Java Heap) 버튼을 누릅니다.
-                            <a href="#">
-                                <img class="img-responsive" src="https://i1.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.24.31.png?resize=660%2C197" alt="">
-                            </a>
-                        </li>
-                        <li>
-                            4단계: Java 덤프 버튼을 누르면 안드로이드 스튜디오에서 덤프 된. hprof 파일을 엽니다. hprof파일 뷰어에는 메모리 누수를 확인할 수 있는 몇 가지 방법이 있습니다. 오른쪽 상단에 있는 Analyzer Tasks 도구를 사용하여 누수되는 Activity를 자동으로 탐지할 수 있습니다. 또는 왼쪽 상단 Class List View를 Package Tree View로 변경하여 Destory 해야 하는 Activity를 찾을 수 있습니다. Activity 객체의 총개수를 확인하세요. 인스턴스가 하나 이상 있으면 누수가 있음을 의미합니다.
-                            <a href="#">
-                                <img class="img-responsive" src="https://i0.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.24.36.png?resize=660%2C353" alt="">
-                            </a>                            
-                        </li>
-                        <li>
-                            5단계: 누수되는 Activity를 찾았다면 하단의 참조 트리(reference tree) 창에서 Activity를 참조하고 있는 객체를 찾으세요.
-                        </li>
-                    </ul>
-
-                    <p>더 많은 정보는 ‘<a target="_blank" href="https://developer.android.com/studio/profile/am-hprof.html">HPROF Viewer and Analyzer</a>‘에서 확인하실 수 있습니다.</p>
-
-                    <h3>일반적인 누수의 패턴은?</h3>
+                    <p>As always, it is worth optimizing both your create and bind steps, doing as little work as possible. <span class="markup--quote markup--p-quote is-other" name="anon_ab1d7665d4cb" data-creator-ids="anon">The fastest code is that which doesn’t have to run;</span> even when the framework can parallelize work done through prefetching, it still takes time, and expensive item creation can still cause jank. For example, a minimal view tree will always be cheaper to create and bind than a more complex one. And binding should essentially be as simple and fast as calling setters. Even if you are able to skate by under the frame time limit with your current code, optimizing it further means you will be more likely to run well on users’ lower-end devices, and saving performance even on higher-end devices always has battery benefits for these common situations. If you’ve already gotten the creation and bind as fast as they can be, then prefetching should help you hide the remaining time in the gap between frames.</p>
                     
-                    <p>안드로이드에서 메모리 누수가 발생하는 이유는 여러 가지가 있습니다. 요약하면 3가지 카테고리로 나눌 수 있습니다.</p>
-
-                    <ol>
-                        <li>정적 참조에 대한 Activity 누수</li>
-                        <li>작업 스레드에 대한 Activity 누수</li>
-                        <li>스레드 자체 누수</li>
-                    </ol>
-
-                    <p>Github의 <a target="_blank" href="https://github.com/frank-tan/SinsOfMemoryLeaks">SinsOfMemoryLeaks</a>에서 다양한 방식으로 메모리 누수를 시키는 간단한 앱을 만들었습니다.</p>
-
-                    <p>LEAK 브랜치에서는 메모리 누수가 되는 코드를 볼 수 있습니다. 앞에서 언급한 안드로이드 스튜디오에서 모니터링 툴을 통해 누수를 추적할 수도 있습니다. FIXED 브랜치에서는 누수가 어떻게 수정되었는지 확인할 수 있습니다. 확신이 들지 않는다면 앞서 언급한 도구를 사용하여 실제로 수정되었는지 확인할 수 있습니다. 두 가지 브랜치는 서로 다른 앱 ID이기 때문에 동일한 기기에 설치하여 나란히 사용할 수 있습니다.</p>
-
+                    <p>If you want to see the optimization in action, either in one of the default LayoutManagers or in a custom LayoutManager of yours, you can toggle <a href="https://developer.android.com/reference/android/support/v7/widget/RecyclerView.LayoutManager.html#setItemPrefetchEnabled%28boolean%29" data-href="https://developer.android.com/reference/android/support/v7/widget/RecyclerView.LayoutManager.html#setItemPrefetchEnabled(boolean)" class="markup--anchor markup--p-anchor" rel="nofollow noopener" target="_blank">LayoutManager.setItemPrefetchEnabled()</a> and compare the results. You should be able to see the results visually; it really is that significant, especially with items that take a significant amount of time to create and bind. But if you want to see what’s going on under the hood, run a <a href="https://developer.android.com/studio/profile/systrace.html" data-href="https://developer.android.com/studio/profile/systrace.html" class="markup--anchor markup--p-anchor" rel="nofollow noopener" target="_blank">Systrace</a>, or enable <a href="https://developer.android.com/studio/profile/dev-options-rendering.html" data-href="https://developer.android.com/studio/profile/dev-options-rendering.html" class="markup--anchor markup--p-anchor" rel="nofollow noopener" target="_blank">GPU profiling</a>, with and without prefetch enabled.</p>
+                    
                     <a href="#">
-                        <img class="img-responsive" src="https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?resize=660%2C383" alt="" srcset="https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?resize=1024%2C595 1024w, https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?resize=720%2C419 720w, https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?resize=825%2C480 825w, https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?w=1320 1320w, https://i2.wp.com/www.kmshack.kr/wp-content/uploads/2017/03/스크린샷-2017-03-24-오전-12.25.18.png?w=1980 1980w" sizes="(max-width: 660px) 100vw, 660px" width="598" height="347">
+                        <img class="img-responsive" src="https://cdn-images-1.medium.com/max/1600/1*gmuFD82uYJmGVVEPFxs6ag.png" alt="">
                     </a>
+                    <span class="caption text-muted">
+                        Systrace showing prefetch occurring during the otherwise idle time of the UI thread                    
+                    </span>
 
-                    <p>다양한 원인을 3가지 카테고리로 나누었는데 하나씩 알아보겠습니다.</p>
-
-                    <h4>정적 참조에 대한 Activity 누수</h4>
-
-                    <p>정적 참조는 앱이 메모리에 있는 한 계속 유지됩니다. Activity는 일반적으로 여러 번 파괴되고 다시 생성되는 생명주기를 가지고 있습니다. 정적 참조에서 Activity를 참조하는 경우 Activity는 생명주기에 의해 Destory 된 후에 GC 되지 않습니다. Activity는 콘텐츠에 따라 수 킬로 바이트에서 많은 경우 메가바이트까지 다양합니다. 복잡한 뷰 계층 구조나 고해상도의 이미지의 경우 많은 양의 메모리가 누수될 수 있습니다.</p>
-
-                    <p>이 카테고리에서는 다음과 같은 항목이 있습니다.</p>
-
-                    <p>
-                        <strong>정적 뷰에 Activity를 참조</strong><br>
-                        <script src="https://gist.github.com/kmshack/0c2d2fa430bc44bc5e54eec13766368b.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
-                    </p>
-
-                    <p>
-                        <strong>정적 변수에 Activity를 참조</strong><br>
-                        <script src="https://gist.github.com/kmshack/e60f814f6e50d46d8d11d5ce1e70b2b5.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
-                    </p>
-
-                    <p>
-                        <strong>싱글톤 객체에 Activity를 참조</strong><br>
-                        <script src="https://gist.github.com/kmshack/95f12f3fdfdd1332d4cb476f1a7a5048.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
-                    </p>
-
-                    <p>
-                        <strong>Activity의 내부 클래스를 정적으로 참조</strong><br>
-                        <script src="https://gist.github.com/kmshack/521b994dfc31c4130c78b06ea9ac80de.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
-                    </p>
-
-                    <h4>작업 스레드에 대한 Activity 누수</h4>
-
-                    <p>Activity는 작업 스레드보다 오래 지속될 수 있습니다. Activity보다 더 오래 작업하는 스레드에서 Activity를 참조하면 누수가 발생합니다. 이 카테고리에도 다음과 같은 몇 가지 항목이 있습니다.</p>
-
-                    <p>
-                        <strong>스레드에서 Activity 참조</strong><br>
-                        <script src="https://gist.github.com/kmshack/f0251a39b7899c281390075112dd666b.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
-                    </p>
-
-                    <p>
-                        <strong>Handler에서 Activity 참조</strong><br>
-                        <script src="https://gist.github.com/kmshack/50221d621ec39b5031893ed826acdb6f.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
-                    </p>
-
-                    <p>
-                        <strong>AsyncTask에서 Activity참조</strong><br>
-                        스레드에서 Activity 참조와 동일하게 AsyncTask의 기술인 스레드풀, ExecutorService에도 동일한 원칙이 적용됩니다.<br>
-                        <script src="https://gist.github.com/kmshack/d90cd8cee732077b8671a68e257bb867.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
-                    </p>
-
-                    <h4>스레드 자체 누수</h4>
-
-                    <p>Activity에서 스레드를 시작할 때마다 스레드를 직접 관리해야 합니다. 스레드는 Activity보다 오래 작업할 수 있기 때문에 Activity가 소멸되면 스레드를 중지시켜야 합니다. 이렇게 하지 않으면 스레드가 누수될 위험이 있습니다.</p>
-
-                    <p>
-                    <script src="https://gist.github.com/kmshack/574a310a0d0539ea7e90993bbb29add3.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css"></p>
-
-                    <h3>까다로운 메모리 누수?</h3>
-
-                    <p>이상적으로 메모리 누수를 일으키는 코드를 작성하지 말아야 하며 존재하는 메모리 누수 문제를 수정해야 합니다. 그러나 실제로 다른 작업으로 인해 메모리 누수 수정의 우선순위를 판단하기 힘든데, 다음 3가지 목록을 통해 심각도를 평가할 수 있습니다.</p>
-
-                    <p>
-                        <strong>1. 누수된 메모리는 얼마나 큰가?</strong><br>
-                        모든 메모리 누수는 동일하지 않습니다. 일부는 몇 킬로바이트만 누설합니다. 일부는 많은 양의 메가바이트까지 유출할 수 있습니다. 앞서 언급한 도구를 사용하여 누설되는 메모리 크기를 측정하여 사용자의 기기에서 얼마나 중요한 용량인지 여부를 통해 결정할 수 있습니다.
-                    </p>
-
-                    <p>
-                        <strong>2. 누수된 객체는 얼마나 오랫동안 메모리에 상주하는가?</strong><br>
-                        스레드를 통한 누수는 스레드의 작업이 완료될 때까지 지속됩니다. 스레드가 최악의 시나리오에서 얼마나 오랫동안 지속되는지 검사를 해야 합니다. 예제에서 스레드는 무한루프이기 때문에 누수되는 객체는 영원히 메모리에 상주합니다. 실제로 대부분의 스레드가 파일 시스템에 액세스 하거나 네트워크 호출을 하는 등의 작업을 수행하기 때문에 일반적으로 시간이 제한되어 있는 짧은 시간일 것입니다. 발생할 수 있는 최대 시간은 메모리 누수를 수정의 우선순위를 결정할 때 고려해야 할 사항입니다.
-                    </p>
-
-                    <p>
-                        <strong>3. 얼마나 많은 객체가 누수되는가?</strong><br>
-                        예제의 정적 참조와 같이 메모리 누수는 하나의 객체에서만 나타납니다. 새로운 Activity가 생성되자 말자, 레퍼런스는 새로운 Activity를 참조되기 시작됩니다. 이전 Activity는 GC수집 대상이 됩니다. 따라서 최대 누출은 개수는 Activity 인스턴스 한 개입니다. 그러나 누수가 있는 경우 새 객체가 생성될 때마다 Activity 인스턴스 개수가 늘어납니다. 예제에서도 Activity가 생성될 때마다 스레드에 Activity에 참조가 걸려 누수가 발생됩니다. 따라서 기기를 20번 회전시키는 동안 20개의 스레드가 누수됩니다. 새로운 인스턴스가 GC에 의해 정리되지 않는 다면 사용 가능한 모든 메모리가 점점 줄어들기 때문에 정말로 나쁜 상황이 생길 수 있습니다.
-                    </p>
-
-                    <h3>고치거나 피하는 방법은?</h3>
-
-                    <p>
-                        Activity 클래스에서 정적 변수를 사용할 때 매우 주의해야 합니다. 정적 변수가 Activity를 직접 또는 간접적으로 참조할 가능성이 있는 경우 onDestory에서 참조를 끊어야 합니다. Manager 인스턴스 또는 싱글톤 객체에 리스너로 Activity를 전달할 때, 전달한 Activity 인스턴스로 다른 객체가 무엇을 하는지 알고 있어야 합니다. 필요한 경우 onDestory에서 리스너를 null로 설정하세요.<br>
-                        <script src="https://gist.github.com/kmshack/f87b948828c39080499c7c30ff54148b.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css">
-                    </p>
-
-                    <p>Activity 클래스에 내부 클래스를 만들 때 가능한 정적으로 만듭니다. 내부 클래스와 익명 클래스에는 암시적 참조가 있습니다. 따라서 내부/익명 클래스의 인스턴스가 포함된 클래스보다 오랫동안 유지되면 문제가 발생합니다. 누수의 위험을 피하기 위해 내부/익명 클래스가 아닌 정적 클래스를 사용하면 됩니다.</p>
-
-                    <p>
-                    <script src="https://gist.github.com/kmshack/eed3fc137fbc7d01566cd6e835043381.js"></script><link rel="stylesheet" href="https://assets-cdn.github.com/assets/gist-embed-e27e9c87522a37091d86281fe0faca508fec23b8d623dac53d89b938f62c9832.css"></p>
-
-                    <p>싱글톤 또는 Manager클래스를 만들 경우 Listener 인스턴스의 참조를 저장하여 관리할 수 있게 해야 하며, 사용자에 의해 참조를 관리할 수 없는 경우 Listener를 WeakReference로 관리하게 합니다. WeakReference는 GC에서 해당 대상을 지우지 않고 다시 회수하지 못하게 합니다. 이 기능은 메모리 누수를 막는데 큰 도움이 되지만 참조된 객체가 필요할 때 사용하지 못하는 부작용도 있을 수 있습니다. 따라서 메모리 누수를 수정하기 위해 가장 마지막 수단으로 사용해야 합니다. Activity에서 시작한 스레드 작업은 onDestory에서 항상 종료하세요.</p>
-
-                    <h3>마치며</h3>
-
-                    <p>우리는 메모리 누수가 무엇인지, 어떻게 발생하는지, 안드로이드 시스템에서 어떤 결과가 발생하는지에 대해 알아보았습니다. 메모리 누수를 탐지하고 식별하는 도구와 안드로이드의 일반적인 메모리 누수 패턴을 검사하는 방법, 심각도를 평가하는 방법과 피하거나 수정하는 방법을 소개하였습니다. Github저장소에서 일반적인 메모리 누수 패턴 및 수정에 대한 코드 예제를 한 번씩 확인해보세요. 모두 행복한 안드로이드 앱을 만드세요:)</p>
-
-                   
                 </div>
             </div>
         </div>
