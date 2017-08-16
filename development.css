@@ -1,0 +1,40 @@
+p { font-size: 100%; line-height: 1.6em; }
+li { font-size: 92%; line-height: 1.5em;
+    padding: 0.1em;}
+
+/* -- Header -- */
+#hd .parameter {
+    padding-bottom: 2em;
+}
+#hd .parameter .title {
+    border-bottom: 0.15em solid #ccc;
+    padding-bottom: 1em;
+    font-size: 152%;
+    font-weight: bold;
+}
+
+/* -- Body -- */
+#bd .parameter {
+    padding-bottom: 2em;
+}
+#bd .parameter .title {
+    border-bottom: 0.15em solid #ccc;
+    padding-bottom: 0.3em;
+
+    font-size: 112%;
+    font-weight: bold;
+}
+.description {
+    margin-left: 1em;
+    margin-right: 1em;
+}
+
+/* //-- footer -- */
+#ft {
+    padding: 1em 0 2em 0;
+    font-size: 82%;
+    border-top: 0.1em solid #ccc;
+    text-align: left;
+    margin-bottom: 2em;
+    margin-top: 2em;
+}

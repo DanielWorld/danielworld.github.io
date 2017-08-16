@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MVP 패턴에 대한 이해</title>
+
+    <link rel="stylesheet" type="text/css" href="../development.css" media="all"/>
+</head>
+<body>
+
+<div id="hd">
+    <div class="parameter">
+        <div class="title">Model-View-Presenter</div>
+        <div class="description">
+            <p>Model-View-Presenter (MVP) 의 경우 Model-View-Controller (MVC) 에서 변형된 설계 패턴으로,
+                유저 인터페이스 개발에 주로 사용되고 있다.</p>
+            <p>MVP 에서 Presenter 의 경우 middle-man 의 기능을 담당하고 있는데, 이는 모든 로직을 presenter
+                넘기고 받는 방식으로 사용된다.</p>
+        </div>
+    </div>
+</div>
+<div id="bd">
+    <div class="parameter">
+        <div class="title">상세 설명</div>
+        <div class="description">
+            <p>MVP 는 자동 유닛 테스트를 쉽게 이용하기
+                위해서, 그리고 개념에 대한 분리를 위한 유저 인터페이스 형태의 설계 패턴이다.</p>
+            <ul>
+                <li>Model : 표시되어지는 데이터를 정의한 인터페이스 또는 유저 인터페이스 안에서 동작하는 것</li>
+                <li>View : 데이터 (Model) 를 표시하고, 유저 이벤트를 Presenter 에 보내 데이터 관련 작업을 수행하는 수동적인 인터페이스</li>
+                <li>Presenter : Model 과 View 에 사이에서 동작한다. repositories (Model) 로 부터 데이터를 얻어내고
+                그 포맷을 뷰에 보여주도록 전달해준다.</li>
+            </ul>
+        </div>
+    </div>
+
+
+    <div class="thumbinner" style="width:222px;">
+        <a href="/wiki/File:Model_View_Presenter_GUI_Design_Pattern.png"
+           class="image">
+            <img alt=""
+                 src="//upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Model_View_Presenter_GUI_Design_Pattern.png/220px-Model_View_Presenter_GUI_Design_Pattern.png"
+                 width="220" height="151" class="thumbimage"
+                 srcset="//upload.wikimedia.org/wikipedia/commons/d/dc/Model_View_Presenter_GUI_Design_Pattern.png 1.5x"
+                 data-file-width="312" data-file-height="214"></a>
+        <div class="thumbcaption">
+            <div class="magnify"><a href="/wiki/File:Model_View_Presenter_GUI_Design_Pattern.png" class="internal"
+                                    title="Enlarge"></a></div>
+            Diagram that depicts the Model View Presenter (MVP) GUI design pattern.
+        </div>
+    </div>
+</div>
+<div id="ft">
+    <p>참고 : <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter">
+        https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter</a></p>
+</div>
+</body>
+</html>
