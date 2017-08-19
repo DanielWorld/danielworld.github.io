@@ -1,11 +1,29 @@
-p { font-size: 100%; line-height: 1.6em; }
-li { font-size: 92%; line-height: 1.5em;
-    padding: 0.1em;}
+p {
+    font-size: 100%;
+    line-height: 1.6em;
+}
+
+li {
+    font-size: 92%;
+    line-height: 1.5em;
+    padding: 0.1em;
+}
+
+pre {
+    font-size: 94%;
+    background-color: #cccccc;
+    font-weight: bold;
+    font-family: "Droid Sans";
+    padding-top: 1em;
+    padding-left: 1em;
+    padding-right: 1em;
+}
 
 /* -- Header -- */
 #hd .parameter {
     padding-bottom: 2em;
 }
+
 #hd .parameter .title {
     border-bottom: 0.15em solid #ccc;
     padding-bottom: 1em;
@@ -17,6 +35,7 @@ li { font-size: 92%; line-height: 1.5em;
 #bd .parameter {
     padding-bottom: 2em;
 }
+
 #bd .parameter .title {
     border-bottom: 0.15em solid #ccc;
     padding-bottom: 0.3em;
@@ -24,6 +43,7 @@ li { font-size: 92%; line-height: 1.5em;
     font-size: 112%;
     font-weight: bold;
 }
+
 .description {
     margin-left: 1em;
     margin-right: 1em;

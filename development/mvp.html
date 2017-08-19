@@ -29,26 +29,102 @@
                 <li>Model : 표시되어지는 데이터를 정의한 인터페이스 또는 유저 인터페이스 안에서 동작하는 것</li>
                 <li>View : 데이터 (Model) 를 표시하고, 유저 이벤트를 Presenter 에 보내 데이터 관련 작업을 수행하는 수동적인 인터페이스</li>
                 <li>Presenter : Model 과 View 에 사이에서 동작한다. repositories (Model) 로 부터 데이터를 얻어내고
-                그 포맷을 뷰에 보여주도록 전달해준다.</li>
+                    그 포맷을 뷰에 보여주도록 전달해준다.
+                </li>
             </ul>
         </div>
     </div>
 
+    <div class="parameter">
+        <div class="thumbinner" style="width:222px;">
+            <a href="/wiki/File:Model_View_Presenter_GUI_Design_Pattern.png"
+               class="image">
+                <img alt=""
+                     src="//upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Model_View_Presenter_GUI_Design_Pattern.png/220px-Model_View_Presenter_GUI_Design_Pattern.png"
+                     width="220" height="151" class="thumbimage"
+                     srcset="//upload.wikimedia.org/wikipedia/commons/d/dc/Model_View_Presenter_GUI_Design_Pattern.png 1.5x"
+                     data-file-width="312" data-file-height="214"></a>
+            <div class="thumbcaption">
+                <div class="magnify"><a href="/wiki/File:Model_View_Presenter_GUI_Design_Pattern.png" class="internal"
+                                        title="Enlarge"></a></div>
+                Diagram that depicts the Model View Presenter (MVP) GUI design pattern.
+            </div>
+        </div>
 
-    <div class="thumbinner" style="width:222px;">
-        <a href="/wiki/File:Model_View_Presenter_GUI_Design_Pattern.png"
-           class="image">
-            <img alt=""
-                 src="//upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Model_View_Presenter_GUI_Design_Pattern.png/220px-Model_View_Presenter_GUI_Design_Pattern.png"
-                 width="220" height="151" class="thumbimage"
-                 srcset="//upload.wikimedia.org/wikipedia/commons/d/dc/Model_View_Presenter_GUI_Design_Pattern.png 1.5x"
-                 data-file-width="312" data-file-height="214"></a>
-        <div class="thumbcaption">
-            <div class="magnify"><a href="/wiki/File:Model_View_Presenter_GUI_Design_Pattern.png" class="internal"
-                                    title="Enlarge"></a></div>
-            Diagram that depicts the Model View Presenter (MVP) GUI design pattern.
+        <div class="description">
+            <p>위의 diagram 을 참고하면
+
+                view 는 수동적으로 동작한다. View (V) 에서 user event 발생시, presenter (P) 에 그 event 를 전달하는 방식이며, presenter 는 model
+                (M) 에
+                모델 업데이트 요청을 시도한다.
+
+                Model 에서 업데이트 부분이 완료되면 다시 presenter 로 전달하며, presenter 에서 view 업데이트를 시도한다. </p>
+
+            <pre>
+public class ExampleView implements ExampleContract.View {
+
+    private ExampleContract.Presenter mPresenter;
+
+    // 생성자 (Constructor)
+    public ExampleView() {
+        mPresenter = new ExamplePresenter(this);
+    }
+}
+        </pre>
+
+            <p>
+                view 의 경우 철저하게 수동적인 형태로 진행이 된다. 한마디로 모든 이벤트 동작들을 presenter 에 전달하는 형태이다. 좀 더 구체적인 예를 들자면 유저가 구매 버튼을 눌렀다고
+                가정해보자.
+                그러면 view 는 구매 요청과 관련된 presenter 내에 method를 호출하는데, 그 method 의 경우 retutn 이나 별도의 callback 이 없다. (즉, 무조건
+                보내기만
+                한다.)
+            </p>
+
+            <p>
+                그러면 presenter 는 view 로 부터 요청을 받아, model 에 해당 요청에 맞는 interface 를 호출한다. Model 은 구매 요청과 관련된 event 를
+                Repository
+                에
+                처리하도록 하고, 그 결과에 맞는 데이터를 받으면, presenter 는 그 데이터를 view 에 다시 전달해주는 역할을 한다.
+            </p>
         </div>
     </div>
+
+    <div class="parameter">
+        <div class="title">예시</div>
+        <div class="description">
+            <p>
+                안드로이드 어플리케이션 개발에서도 mvp 패턴이 사용될 수 있는데,
+                Activity 와 Fragment 형태의 클래스가 View 를 대표하며, view 를 기준으로 Presenter, Model 관리를 한다. 필자의 경우 Fragment 에서 view 를
+                처리하며, Activity 의 경우 Fragment 의 Presenter 와 연동할 수 있도록 구현을 한다.
+            </p>
+            <pre>
+public class BoardDetailActivity extends Activity {
+
+    private BoardDetailPresenter mPresenter;
+    // view 와 model 사이를 interaction 할 클래스
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+
+    ….
+
+    mPresenter = new BoardDetailPresenter(fragment);
+    // Fragment 를 view 로 처리하면, Activity 에서도 Presenter 요청이 가능하며,
+    // Fragment event 과의 연동처리도 간결해진다.
+}
+
+    public onClick(View v) {
+
+        // 글쓰기 데이터 서버 전송 시도
+        mPresenter.onPostBoard(BoardData data);
+    }
+}
+            </pre>
+        </div>
+    </div>
+
+
 </div>
 <div id="ft">
     <p>참고 : <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter">
