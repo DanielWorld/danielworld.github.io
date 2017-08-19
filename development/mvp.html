@@ -15,7 +15,7 @@
             <p>Model-View-Presenter (MVP) 의 경우 Model-View-Controller (MVC) 에서 변형된 설계 패턴으로,
                 유저 인터페이스 개발에 주로 사용되고 있다.</p>
             <p>MVP 에서 Presenter 의 경우 middle-man 의 기능을 담당하고 있는데, 이는 모든 로직을 presenter
-                넘기고 받는 방식으로 사용된다.</p>
+                로 넘기고 받는 방식으로 사용된다.</p>
         </div>
     </div>
 </div>
@@ -24,7 +24,7 @@
         <div class="title">상세 설명</div>
         <div class="description">
             <p>MVP 는 자동 유닛 테스트를 쉽게 이용하기
-                위해서, 그리고 개념에 대한 분리를 위한 유저 인터페이스 형태의 설계 패턴이다.</p>
+                위해서, 그리고 개념에 대한 분리를 위한 유저 인터페이스 (UI) 형태의 설계 패턴이다.</p>
             <ul>
                 <li>Model : 표시되어지는 데이터를 정의한 인터페이스 또는 유저 인터페이스 안에서 동작하는 것</li>
                 <li>View : 데이터 (Model) 를 표시하고, 유저 이벤트를 Presenter 에 보내 데이터 관련 작업을 수행하는 수동적인 인터페이스</li>
@@ -105,14 +105,14 @@ public class BoardDetailActivity extends Activity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState);
 
-    ….
+        ….
 
-    mPresenter = new BoardDetailPresenter(fragment);
-    // Fragment 를 view 로 처리하면, Activity 에서도 Presenter 요청이 가능하며,
-    // Fragment event 과의 연동처리도 간결해진다.
-}
+        mPresenter = new BoardDetailPresenter(fragment);
+        // Fragment 를 view 로 처리하면, Activity 에서도 Presenter 요청이 가능하며,
+        // Fragment event 과의 연동처리도 간결해진다.
+    }
 
     public onClick(View v) {
 
