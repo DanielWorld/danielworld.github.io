@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Java GC Algorithms</title>
+
+    <link rel="stylesheet" type="text/css" href="../development.css" media="all"/>
+</head>
+<body>
+
+<div id="hd">
+    <div class="parameter">
+        <div class="title">Java GC Algorithms</div>
+        <div class="description">
+            <!--<p>Header description</p>-->
+        </div>
+    </div>
+</div>
+
+<div id="bd">
+    <div class="parameter">
+        <div class="title">1. Serial GC (-XX:UseSerialGC)</div>
+        <div class="description">
+            <p>:  GC on Young Generation and Old Generation  </p>
+            <p>: Use the simple mark-sweep-compact cycle for young and tenured generations.  </p>
+            <p>: This is good for client systems and systems with low memory footprint and smaller CPU.</p>
+        </div>
+    </div>
+
+    <div class="parameter">
+        <div class="title">2. Parallel GC (-XX:UseParallelGC)</div>
+        <div class="description">
+            <p>:  GC on Young Generation and Old generation  </p>
+            <p>: This uses N threads, which can be configured using -XX:ParalledGCThreads=N, here N is also the number of CPU cores for GC.  </p>
+            <p>: It uses these N threads for GC in the Young Generation but uses only one-thread in the Old Generation. </p>
+        </div>
+    </div>
+
+    <div class="parameter">
+        <div class="title">3. Parallel Old GC (-XX:UseParalleOldGC)</div>
+        <div class="description">
+            <p>:  GC on Young Generation and Old Generation.  </p>
+            <p>: This is same as Parallel GC, except that it uses N threads for GC in both Old and Young Generation. </p>
+        </div>
+    </div>
+
+    <div class="parameter">
+        <div class="title">4. Concurrent Mark and Sweep GC (-XX:ConcMarkSweepGC)</div>
+        <div class="description">
+            <p>:  GC on Old Generation  : As the name suggests, the CMS GC minimizes the pauses that are required for GC.  </p>
+            <p>: It is most useful when used to create highly responsive applications and it does GC only in Old Generation.  </p>
+            <p>: It creates multiple threads for GC that work concurrently with applications thread, which can be specified using the -XX:ParallelCMSThreads=n. </p>
+        </div>
+    </div>
+
+    <div class="parameter">
+        <div class="title">5. G1 GC (-XX:UseG1GC)</div>
+        <div class="description">
+            <p>:  GC on Young and Old Generation (By Dividing Heap into Equal Size Regions)  </p>
+            <p>: This is a parallel, concurrent, and incrementally compacting low-pause garbage collector.   </p>
+            <p>: G1 was introduced in Java 7 with the ultimate vision to replace CMS GC.  </p>
+            <p>: It divides the heap into multiple, equal sized regions and then performs GC, usually starting with the region that has less live data, hence "Garbage First".  </p>
+        </div>
+    </div>
+
+    <div class="parameter">
+        <div class="title">* Currently Android JVM or ART? which GC algorithm they use ?  </div>
+        <div class="description">
+            <p>: Android Runtime (ART) and Dalvik were originally created specifically for the Android project.    </p>
+            <p>: ART as the runtime executes the Dalvik Executable format and Dex bytecode specification.    </p>
+            <p>: ART improved GC  </p>
+            <div class="subDescription">
+                <ol>
+                    <li>
+                        One GC pause instead of two <br>
+                        : The new GC enumerates all allocated objects and marks all reachable objects in only one pause while Dalvik’s GC pause twice.  
+                    </li>
+                    <li>
+                        Parallelized processing during the remaining GC pause  <br>
+                        : Parallelization of the mark-and-sweep algorithm enables the app to reduce pause time noticeably.  
+                    </li>
+                    <li>
+                        Collector with lower total GC time for the special case of cleaning up recently-allocated, short-lived objects  <br>
+                        : ART has a lower total GC time for certain cases where cleaning up recently-allocated, short-lived objects is required.  
+                    </li>
+                    <li>
+                        Improved garbage collection ergonomics making concurrent garbage collections more timely, which makes ‘GC_FOR_ALLOC’ events extremely rare in typical use cases  .
+                    </li>
+                    <li>
+                        Compacting GC to reduce background memory usage and fragmentation.  
+                    </li>
+                    <li>
+                        ART makes concurrent GC timelier. As a result, the app does not have to stop if it attempts to allocate memory when the heap is already full.  
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!--<div id="ft">-->
+    <!--<p>이동 : <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter">-->
+        <!--https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter</a></p>-->
+<!--</div>-->
+</body>
+</html>
