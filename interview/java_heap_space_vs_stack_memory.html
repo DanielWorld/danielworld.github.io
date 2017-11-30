@@ -54,20 +54,20 @@
         <div class="title">Heap and Stack Memory in Java Program</div>
         <div class="description">
             <pre>
-                public class Memory {
+public class Memory {
 
-                    public static void main(String[] args) {    // Line 1
-                        int i = 1;                  // Line 2
-                        Object obj = new Object();  // Line 3
-                        Memory mem = new Memory();  // Line 4
-                        mem.foo(obj);               // Line 5
-                    }   // Line 9
+    public static void main(String[] args) {    // Line 1
+        int i = 1;                  // Line 2
+        Object obj = new Object();  // Line 3
+        Memory mem = new Memory();  // Line 4
+        mem.foo(obj);               // Line 5
+    }   // Line 9
 
-                    private void foo(Object param) {    // Line 6
-                        String str = param.toString();  // Line 7
-                        System.out.println(str);
-                    }   // Line 8
-                }
+    private void foo(Object param) {    // Line 6
+        String str = param.toString();  // Line 7
+        System.out.println(str);
+    }   // Line 8
+}
             </pre>
             <p>
                 Below image shows the Stack and Heap memory with reference to above program and
@@ -127,13 +127,33 @@
                     is used only by one thread of execution.
                 </li>
                 <li>
-                    ... (under construction) <br>
-                    <a href="https://www.journaldev.com/4098/java-heap-space-vs-stack-memory">
-                        Next
-                    </a>
-                    <a href="https://dzone.com/articles/java-memory-architecture-model-garbage-collection">
-                        Memory management
-                    </a>
+                    Whenever an object is created, it's always stored in the Heap space and stack
+                    memory contains the reference to it. Stack memory only contains local primitive
+                    variables and reference variables to objects in heap space.
+                </li>
+                <li>
+                    Objects stored in the heap are globally accessible whereas stack memory can't be
+                    accessed by other threads.
+                </li>
+                <li>
+                    Memory management in stack is doen in LIFO manner whereas it's more complex in Heap
+                    memory because it's used globally. Heap memory is divided into Young-Generation,
+                    Old-Generation etc, more details at <a href="java_gc_generation.html">Java Garbage Collection.</a>
+                </li>
+                <li>
+                    Stack memory is short-lived whereas heap memory lives from the start till the end of application execution.
+                </li>
+                <li>
+                    We can use <b>-Xms</b> and <b>-Xmx</b> JVM option to define the startup size and maximum size of heap memory.
+                    We can use <b>-Xss</b> to define the stack memory size.
+                </li>
+                <li>
+                    When stack memory is full, Java runtime throws <b>java.lang.StackOverFlowError</b> whereas if heap
+                    memory is full, it throws <b>java.lang.OutOfMemoryError: Java Heap Space</b> error.
+                </li>
+                <li>
+                    Stack memory size is very leass when compared to Heap memory. Because of simplicity in memory
+                    allocation (LIFO), stack memory is very fast when compared to heap memory.
                 </li>
             </ol>
         </div>
@@ -143,51 +163,16 @@
         <div class="title">Video</div>
         <div class="description">
             <iframe width="420" height="315"
-                    src="https://www.youtube.com/embed/v=_y7k_0edvuY">
+                    src="https://www.youtube.com/embed/_y7k_0edvuY"
+                    frameborder="0" allowfullscreen>
             </iframe>
         </div>
     </div>
-    <div class="parameter">
-        <div class="title">Body parameter Title1</div>
-        <div class="description">
-            <p>Body description1</p>
-        </div>
-    </div>
-
-    <div class="parameter">
-        <div class="title">Body parameter Title2</div>
-        <div class="description">
-            <p>Body description2</p>
-            <div class="subDescription">
-                <p>Body subDescription</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="parameter">
-        <div class="title">Body parameter Title2</div>
-        <div class="description">
-            <p>Body description2</p>
-
-            <pre>
-    public class ExampleView implements ExampleContract.View {
-
-        private ExampleContract.Presenter mPresenter;
-
-        // Source code
-        public ExampleView() {
-            mPresenter = new ExamplePresenter(this);
-        }
-    }
-            </pre>
-
-        </div>
-    </div>
 </div>
 
-<div id="ft">
-    <p>이동 : <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter">
-        https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter</a></p>
-</div>
+<!--<div id="ft">-->
+    <!--<p>이동 : <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter">-->
+        <!--https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter</a></p>-->
+<!--</div>-->
 </body>
 </html>
