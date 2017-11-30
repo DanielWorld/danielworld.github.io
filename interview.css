@@ -1,0 +1,65 @@
+#hd {
+     border-bottom: 1px solid #ccc;
+     margin-bottom: 2em;
+}
+
+#hd .parameter .title{
+     padding-left: 10px;
+     font-size: 200%;
+     margin-bottom: 6px;
+     font-weight: bold;
+}
+
+#hd .parameter .description{
+     font-size: 160%;
+     margin-bottom: 6px;
+     padding-left: 1em;
+}
+
+#hd .parameter .description .subDescription{
+     font-size: 80%;
+     margin-bottom: 6px;
+     padding-left: 2em;
+}
+
+#bd {
+     border-bottom: 1px solid #ccc;
+     margin-bottom: 2em;
+}
+
+#bd .parameter .title{
+     padding-left: 10px;
+     font-size: 200%;
+     margin-bottom: 6px;
+     font-weight: bold;
+}
+
+#bd .parameter .description{
+     font-size: 160%;
+     margin-bottom: 6px;
+     padding-left: 1em;
+}
+
+#bd .parameter .description .subDescription{
+     font-size: 90%;
+     margin-bottom: 6px;
+     padding-left: 2em;
+}
+
+pre {
+    font-size: 90%;
+    background-color: #cccccc;
+    font-weight: bold;
+    font-family: "Droid Sans";
+    padding-top: 1em;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+li {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+
+
