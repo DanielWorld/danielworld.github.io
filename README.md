@@ -1,1 +1,1 @@
-# Daniel Park 's Resume
+# Namgyu Park 's Resume
