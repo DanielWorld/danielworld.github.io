@@ -1,71 +1,0 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Java GC Generation</title>
-
-    <link rel="stylesheet" type="text/css" href="../interview.css" media="all"/>
-</head>
-<body>
-
-<div id="hd">
-    <div class="parameter">
-        <div class="title">Java GC Generation</div>
-        <div class="description">
-            <ul>
-                <li>Young generation</li>
-                <li>Old generation</li>
-                <li>Permanent generation</li>
-            </ul>
-            <p>Usually, (young + old) generation is heap memory area.</p>
-        </div>
-    </div>
-</div>
-<div id="bd">
-    <div class="parameter">
-        <div class="title">1. Young generation (Eden space) </div>
-        <div class="description">
-            <p>: All new objects are first created in Eden space.</p>
-            <p>: Once space reaches then, Minor GC kicks in.</p>
-            <p>: First it removes all the non-referenced objects and move referenced objects from the 'eden' and 'from' into the 'to' survivor space.  </p>
-            <p>: Once the GC is over, the 'from' and 'to' roles are swapped.</p>
-
-            <div class="subDescription">
-                <ol>
-                    <li>Survivor1 (From) <br>: 'to' role during the previous GC. </li>
-                    <li>Survivor2 (To) <br>: During GC, that all referenced objects are moved to, from 'from' and 'eden'.</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-
-    <div class="parameter">
-        <div class="title">2. Old generation (Tenured) </div>
-        <div class="description">
-            <p>: Objects have their own age. (Age is the number of times that it has moved within the survivor space.)  </p>
-            <p>: Depending on the threshold limit, objects moved from the 'to' survivor space to Old generation space.</p>
-            <p>: When the heap is full or the old generation is full,  'Major GC' kicks in.
-                ('Stop-the-World' happens here)  
-                (Remember this, 'Minor GC' kicks in Young generation 'Major GC' kicks in Old generation)    </p>
-            <p>: There is another type of GC named 'Full GC' which involves other memory areas such as the permgen space. </p>
-        </div>
-    </div>
-
-    <div class="parameter">
-        <div class="title">3. Permanent generation (Permgen space) </div>
-        <div class="description">
-            <p>: Store the following information   </p>
-            <ul>
-                <li>Constant Pool (Memory Pool)</li>
-                <li>Field & Method Data and Code</li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-<!--<div id="ft">-->
-    <!--<p>이동 : <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter">-->
-        <!--https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter</a></p>-->
-<!--</div>-->
-</body>
-</html>
